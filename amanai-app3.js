@@ -152,12 +152,16 @@ function pointInPoly(pts, x, z){
   return inside;
 }
 function lotAt(x, z){
+  var best = -1, bd = 1e18;
   for (var i=0;i<PLAN.lots.length;i++){
     var b = lotBBox[i];
     if (x<b[0]||x>b[1]||z<b[2]||z>b[3]) continue;
-    if (pointInPoly(PLAN.lots[i].p, x, z)) return i;
+    if (!pointInPoly(PLAN.lots[i].p, x, z)) continue;
+    var c = PLAN.lots[i].c;
+    var d = (x-c[0])*(x-c[0]) + (z-c[1])*(z-c[1]);
+    if (d < bd){ bd = d; best = i; }
   }
-  return -1;
+  return best;
 }
 
 /* estados demo */
@@ -397,6 +401,7 @@ function fmtLot(lot, i){
 function hover(e){
   var hit = pickLot(e);
   if (lastHi >= 0 && lastHi !== selected){ paintLot(lastHi, lotColor(lastHi)); lastHi = -1; }
+  canvas.style.cursor = hit ? 'pointer' : '';
   if (!hit){ tip.style.display='none'; return; }
   var html = '';
   if (hit.type === 'lot'){
@@ -422,7 +427,7 @@ function select(e){
     selected = hit.i;
     paintLot(hit.i, selColor);
     var lot = PLAN.lots[hit.i];
-    html = '<b>'+lot.mz+' &middot; Lote '+lot.n+'</b><div class="d">Frente &times; fondo: '+lot.w.toFixed(1).replace('.',',')+' &times; '+lot.d.toFixed(1).replace('.',',')+' m<br>&Aacute;rea: '+lot.area+' m&sup2;</div>';
+    html = '<b>'+lot.mz+' &middot; Lote '+lot.n+'</b><div class="d">Frente &times; fondo: '+lot.w.toFixed(1).replace('.',',')+' &times; '+lot.d.toFixed(1).replace('.',',')+' m<br>&Aacute;rea: '+lot.area+' m&sup2;<br><em>N.&ordm; de referencia (orden geom&eacute;trico)</em></div>';
     if (estadosOn){
       var ec = ['#b5d69c','#e9c46a','#c96f57'][estados[hit.i]];
       html += '<span class="est" style="background:'+ec+'33;color:#22352b;border:1px solid '+ec+'">'+EST_NAMES[estados[hit.i]]+' (demo)</span>';
