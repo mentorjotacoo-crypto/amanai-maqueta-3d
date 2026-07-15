@@ -204,11 +204,16 @@ var houses = new THREE.Group(); world.add(houses);
   var win = new THREE.InstancedMesh(winG, new THREE.MeshStandardMaterial({color:0x9fb9c4, roughness:0.35, metalness:0.15}), spots.length);
   var q = new THREE.Quaternion(), up = new THREE.Vector3(0,1,0);
   var pos = new THREE.Vector3(), sc = new THREE.Vector3(), m4 = new THREE.Matrix4();
+  function angDiff(a, b){ return Math.abs(Math.atan2(Math.sin(a-b), Math.cos(a-b))); }
   for (var i=0;i<spots.length;i++){
     var sp = spots[i], two = rnd() < 0.3;
     var h = two ? 5.3 : 2.9;
-    var rotY = -sp.f;                       /* +X local -> direccion al frente */
-    var fx = Math.cos(sp.f), fz = Math.sin(sp.f);
+    /* la casa siempre a lo largo del eje del lote (como sus vecinas);
+       la fachada apunta al extremo del eje mas cercano a la via */
+    var ax = -sp.a;
+    var facing = angDiff(ax, sp.f) <= angDiff(ax + Math.PI, sp.f) ? ax : ax + Math.PI;
+    var rotY = -facing;
+    var fx = Math.cos(facing), fz = Math.sin(facing);
     var setback = sp.d/2 - 1.3 - HL/2;      /* antejardin de ~1,3 m */
     var cx0 = sp.c[0] + fx*setback, cz0 = sp.c[1] + fz*setback;
     q.setFromAxisAngle(up, rotY);
