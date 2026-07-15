@@ -392,9 +392,10 @@ function pickLot(e){
   return null;
 }
 function lotColor(i){ return estadosOn ? EST_COLORS[estados[i]] : lotRanges[i].color; }
+function lotNum(lot){ return lot.n === 'SN' ? 'S/N' : lot.n; }
 function fmtLot(lot, i){
   var est = estadosOn ? '<br><span>Estado: '+EST_NAMES[estados[i]]+' (demo)</span>' : '';
-  return '<b>'+lot.mz+' &middot; Lote '+lot.n+'</b><span>'+
+  return '<b>'+lot.mz+' &middot; Lote '+lotNum(lot)+'</b><span>'+
     (lot.w>=5.4 && lot.d>=9.8 ? '5,50 &times; 10,00 m &mdash; 55 m&sup2;' : lot.w.toFixed(1).replace('.',',')+' &times; '+lot.d.toFixed(1).replace('.',',')+' m &mdash; '+lot.area+' m&sup2;')+
     '</span>'+est;
 }
@@ -427,7 +428,7 @@ function select(e){
     selected = hit.i;
     paintLot(hit.i, selColor);
     var lot = PLAN.lots[hit.i];
-    html = '<b>'+lot.mz+' &middot; Lote '+lot.n+'</b><div class="d">Frente &times; fondo: '+lot.w.toFixed(1).replace('.',',')+' &times; '+lot.d.toFixed(1).replace('.',',')+' m<br>&Aacute;rea: '+lot.area+' m&sup2;<br><em>N.&ordm; de referencia (orden geom&eacute;trico)</em></div>';
+    html = '<b>'+lot.mz+' &middot; Lote '+lotNum(lot)+'</b><div class="d">Frente &times; fondo: '+lot.w.toFixed(1).replace('.',',')+' &times; '+lot.d.toFixed(1).replace('.',',')+' m<br>&Aacute;rea: '+lot.area+' m&sup2;<br><em>Numeraci&oacute;n seg&uacute;n plano V.27</em></div>';
     if (estadosOn){
       var ec = ['#b5d69c','#e9c46a','#c96f57'][estados[hit.i]];
       html += '<span class="est" style="background:'+ec+'33;color:#22352b;border:1px solid '+ec+'">'+EST_NAMES[estados[hit.i]]+' (demo)</span>';

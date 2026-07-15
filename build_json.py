@@ -239,6 +239,49 @@ for mz, idxs in by_mz.items():
                          "f": round(front_angle(c), 4), "mz": mz, "n": n,
                          "w": round(info[i]["w"],1), "d": round(info[i]["d"],1),
                          "area": round(l.area*S*S)})
+# --- numeracion REAL leida del plano V.27 (por orden de referencia) ---
+NUM_MAP = {
+ "MZ 1": [None,5,4,3,2,None,1,None,11,10,9,8,7,6,None,None],
+ "MZ 2": [None,None,None,6,5,4,3,2,1,10,9,8,7],
+ "MZ 3": [None,4,3,None,2,1,7,None,6,5],
+ "MZ 4": [3,2,1,8,7,9,6,5,4],
+ "MZ 5": [None,None,5,4,3,2,1,10,9,None],
+ "MZ 6": [5,4,3,2,1,6,7,8,9],
+ "MZ 7": ["M6-11","M6-12","M6-13","M6-14","M6-15","M6-16","M6-17","M6-18",
+          16,1,15,2,14,3,13,4,12,5,11,6,10,7,9,8],
+ "MZ 8": [8,7,6,5,4,3,2,1,16,15,14,13,12,11,10,9],
+ "MZ 9": [8,7,6,5,4,3,2,1,16,15,14,13,12,11,10,9],
+ "MZ 10": [8,7,6,5,4,3,2,1,20,19,18,17,16,15,14,13,12,11],
+ "MZ 11": [12,11,10,9,8,7,6,5,4,3,2,1,24,23,22,21,20,19,18,17,16,15,14,13],
+ "MZ 12": [13,1,2,3,4,5,6,7,8,9,10,11,12],
+ "MZ 13": [1,2],
+ "MZ 14": [1,2,3,4,5,7,8,9,6,10,11,12,13,14],
+ "MZ 15": list(range(1,26)),
+ "MZ 16": list(range(1,29)),
+ "MZ 17": list(range(1,26)),
+ "MZ 18": list(range(1,25)),
+ "MZ 19": list(range(1,22)),
+ "MZ 20": [10,9,8,7,6,5,4,3,2,1],
+ "MZ 21": list(range(1,22)),
+}
+for lot in lots_out:
+    mp = NUM_MAP.get(lot["mz"])
+    if mp is None or lot["n"] > len(mp):
+        lot["n"] = "SN"; continue
+    v = mp[lot["n"] - 1]
+    if v is None:
+        lot["n"] = "SN"
+    elif isinstance(v, str) and v.startswith("M6-"):
+        lot["mz"] = "MZ 6"; lot["n"] = int(v[3:])
+    else:
+        lot["n"] = v
+# validacion de unicidad
+from collections import Counter as _C
+chk = _C((l["mz"], l["n"]) for l in lots_out if l["n"] != "SN")
+dups = [k for k, v in chk.items() if v > 1]
+print("duplicados:", dups)
+print("S/N:", sum(1 for l in lots_out if l["n"] == "SN"))
+print("conteo final por mz:", dict(sorted(_C(l["mz"] for l in lots_out).items())))
 data["lots"] = lots_out
 print("lots:", len(lots_out))
 print("per mz:", {k: len(v) for k, v in sorted(by_mz.items())})

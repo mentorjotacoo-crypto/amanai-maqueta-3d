@@ -82,7 +82,12 @@ print("per block (idx,n,cov%):", per_block)
 # fill remnants of undercovered blocks with local grid
 from shapely import affinity
 from shapely.geometry import box as _box
-lots_union = unary_union([f.buffer(0.5) for f in all_lots])
+LOTE_AREAS = [412.25,346.43,478.36,413.80,407.75,467.74,564.50,949.44,697.48,673.71,723.97,676.98,474.02,790.72,846.03,489.99,285.49,718.05]
+def is_real_perim(p):
+    a = p.area * S * S
+    return any(abs(a - la) <= 0.3*la for la in LOTE_AREAS)
+perims_u = unary_union([p.buffer(1.5) for p in L["perims"] if is_real_perim(p)])
+lots_union = unary_union([f.buffer(0.5) for f in all_lots] + [perims_u])
 fill = []
 LOT_W_PT, LOT_D_PT = 5.5/S, 10.0/S
 for blk in blocks:
