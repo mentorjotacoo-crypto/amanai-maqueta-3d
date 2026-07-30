@@ -12,9 +12,10 @@ MZ_LABELS = {
  "MZ 10":(555,243),"MZ 11":(618,232),"MZ 12":(672,238),
  "MZ 20":(218,362),"MZ 19":(272,350),"MZ 18":(330,350),"MZ 17":(388,356),"MZ 16":(450,368),
  "MZ 15":(512,368),"MZ 14":(558,352),"MZ 13":(640,330)}
+# Áreas oficiales — plano AMANAI FINAL (jul 2026). O y P reajustados vs V.27 (846.03/489.99).
 LOTE_AREAS = {"A":412.25,"B":346.43,"C":478.36,"D":413.80,"E":407.75,"F":467.74,"G":564.50,
- "H":949.44,"I":697.48,"J":673.71,"K":723.97,"L":676.98,"M":474.02,"N":790.72,"O":846.03,
- "P":489.99,"Q":285.49,"R":718.05}
+ "H":949.44,"I":697.48,"J":673.71,"K":723.97,"L":676.98,"M":474.02,"N":790.72,"O":645.91,
+ "P":665.17,"Q":285.49,"R":718.05}
 # sheet index -> letter, using saved label_pos order
 SHEET = {1:"R",2:"Q",3:"P",4:"O",5:"N",9:"M",10:"L",17:"A",19:"K",24:"B",26:"J",
          30:"C",32:"I",35:"D",39:"H",40:"E",43:"G",44:"F"}
@@ -319,6 +320,16 @@ for letter in missing:
     sq = _aff.rotate(sq, math.degrees(angp), origin=(p[0],p[1]))
     perims_out.append({"p": [M(pt) for pt in list(sq.exterior.coords)[:-1]],
                        "c": M(p), "letter": letter, "area": LOTE_AREAS[letter], "approx": True})
+# Override O y P con la geometría real del plano FINAL (linde O/P reajustada)
+_op = json.load(open("op_final.json"))
+perims_out = [q for q in perims_out if q["letter"] not in ("O", "P")]
+for letter in ("O", "P"):
+    area_geom, poly = _op[letter]
+    cxm = sum(pt[0] for pt in poly) / len(poly)
+    cym = sum(pt[1] for pt in poly) / len(poly)
+    perims_out.append({"p": poly, "c": [round(cxm, 2), round(cym, 2)],
+                       "letter": letter, "area": LOTE_AREAS[letter], "area_geom": round(area_geom)})
+print("O/P override -> O:", _op["O"][0], "P:", _op["P"][0])
 data["perims"] = perims_out
 
 data["trees"] = [M(t) for t in L["trees"]]
