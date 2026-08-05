@@ -276,6 +276,12 @@ for lot in lots_out:
         lot["mz"] = "MZ 6"; lot["n"] = int(v[3:])
     else:
         lot["n"] = v
+# lotes dibujados que NO existen en el inventario oficial (OPCION V4) -> S/N
+PHANTOMS = {(4,9),(5,9),(5,10),(12,13),(20,10)}
+for lot in lots_out:
+    mzn2 = int(lot["mz"].replace("MZ ",""))
+    if lot["n"] != "SN" and (mzn2, lot["n"]) in PHANTOMS:
+        lot["n"] = "SN"
 # validacion de unicidad
 from collections import Counter as _C
 chk = _C((l["mz"], l["n"]) for l in lots_out if l["n"] != "SN")
