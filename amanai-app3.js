@@ -193,12 +193,26 @@ var houses = new THREE.Group(); world.add(houses);
     g.computeVertexNormals();
     return g;
   }
-  /* solo lotes rectangulares estándar; el frente de la casa mira a la vía (lot.f) */
+  /* solo lotes rectangulares estándar con número oficial; el frente mira a la vía */
   var spots = [];
   PLAN.lots.forEach(function(lot){
-    if (lot.w >= 4.6 && lot.w <= 6.6 && lot.d >= 8.6 && lot.d <= 11.5 &&
+    if (lot.n !== 'SN' && lot.w >= 4.6 && lot.w <= 6.6 && lot.d >= 8.6 && lot.d <= 11.5 &&
         lot.area >= 46 && rnd() < 0.6) spots.push(lot);
   });
+  /* eje dominante por manzana: en la banda norte se alinean las casas de lotes torcidos */
+  var mzAxis = {};
+  (function(){
+    var acc = {};
+    PLAN.lots.forEach(function(l){
+      if (l.n === 'SN') return;
+      var a2 = -2*l.a;
+      (acc[l.mz] = acc[l.mz] || [0,0]);
+      acc[l.mz][0] += Math.cos(a2); acc[l.mz][1] += Math.sin(a2);
+    });
+    for (var k in acc) mzAxis[k] = Math.atan2(acc[k][1], acc[k][0]) / 2;
+  })();
+  var SNAP_MZ = {'MZ 1':1,'MZ 2':1,'MZ 3':1,'MZ 4':1,'MZ 5':1,'MZ 21':1};
+  function axDiff(a,b){ var d = Math.abs((a-b) % Math.PI); return Math.min(d, Math.PI-d); }
   var HL = 6.4, HW = 4.1; /* fondo (X, hacia la vía) x frente (Z) */
   var bodyG = new THREE.BoxGeometry(HL, 1, HW);
   var body = new THREE.InstancedMesh(bodyG, mat(COL.wall, 0.85), spots.length);
@@ -217,6 +231,7 @@ var houses = new THREE.Group(); world.add(houses);
     /* la casa siempre a lo largo del eje del lote (como sus vecinas);
        la fachada apunta al extremo del eje mas cercano a la via */
     var ax = -sp.a;
+    if (SNAP_MZ[sp.mz] && mzAxis[sp.mz] !== undefined && axDiff(ax, mzAxis[sp.mz]) > 0.28) ax = mzAxis[sp.mz];
     var facing = angDiff(ax, sp.f) <= angDiff(ax + Math.PI, sp.f) ? ax : ax + Math.PI;
     var rotY = -facing;
     var fx = Math.cos(facing), fz = Math.sin(facing);
