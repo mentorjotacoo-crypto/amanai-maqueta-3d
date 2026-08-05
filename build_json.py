@@ -282,6 +282,20 @@ for lot in lots_out:
     mzn2 = int(lot["mz"].replace("MZ ",""))
     if lot["n"] != "SN" and (mzn2, lot["n"]) in PHANTOMS:
         lot["n"] = "SN"
+# clasificacion de esquineros (tabla definitiva validada contra inventario oficial)
+CORNERS = {
+ 1:({1,11},{2,10,5,6}), 2:({1,10},{2,9,5,6}), 3:({1,7},{2,6,4,5}), 4:({1,8},{2,7,4,5}),
+ 5:({1},{2,5}), 6:({1,18},{2,17,10,11}), 7:({1,16},{2,8,9,15}), 8:({1,16},{2,8,9,15}),
+ 9:({1,16},{2,8,9,15}), 10:({1,20},{2,19,8,11}), 11:({1,24},{2,12,13,23}), 12:({1},{2,12}),
+ 13:({1,2},set()), 14:({1,14},{2,13,9,10}), 15:({1,25},{2,13,14,24}), 16:({1,28},{2,14,15,27}),
+ 17:({1,25},{2,12,13,24}), 18:({1,24},{2,12,13,23}), 19:({1,21},{2,10,11,20}), 20:({1,9},{2,8}),
+ 21:({1,21},{2,20}),
+}
+for lot in lots_out:
+    if lot["n"] == "SN": continue
+    t1c, t2c = CORNERS.get(int(lot["mz"].replace("MZ ","")), (set(), set()))
+    if lot["n"] in t1c: lot["e"] = "T1"
+    elif lot["n"] in t2c: lot["e"] = "T2"
 # validacion de unicidad
 from collections import Counter as _C
 chk = _C((l["mz"], l["n"]) for l in lots_out if l["n"] != "SN")

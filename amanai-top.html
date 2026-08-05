@@ -43,7 +43,7 @@
   #legend .cap{font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px;}
   .lg{display:flex;align-items:center;gap:8px;font-size:12px;margin:4px 0;}
   .sw{width:14px;height:14px;border-radius:4px;border:1px solid rgba(34,53,43,.25);flex:none;}
-  #lgEst .note{font-size:10px;color:var(--ink-soft);margin-top:4px;max-width:200px;}
+  #lgEst .note,#lgEsq .note{font-size:10px;color:var(--ink-soft);margin-top:4px;max-width:200px;}
 
   #ctl{right:18px;bottom:18px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;align-items:flex-end;}
   .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
@@ -123,6 +123,12 @@
   <div class="lg"><span class="sw" style="background:#d9a441"></span>Zona de comercio</div>
   <div class="lg"><span class="sw" style="background:#7a776f"></span>Vías y andenes</div>
   <div class="lg"><span class="sw" style="background:#93b287"></span>Suelo de protección ambiental</div>
+  <div id="lgEsq" style="display:none">
+    <div class="cap" style="margin-top:10px">Esquineros</div>
+    <div class="lg"><span class="sw" style="background:#c96b57"></span>Esquinero Tipo 1</div>
+    <div class="lg"><span class="sw" style="background:#e5a15c"></span>Esquinero Tipo 2</div>
+    <div class="note">Tipo 1: esquinas sobre la vía principal. Tipo 2: contiguos y esquinas superiores.</div>
+  </div>
   <div id="lgEst" style="display:none">
     <div class="cap" style="margin-top:10px">Estado comercial</div>
     <div class="lg"><span class="sw" style="background:#b5d69c"></span>Disponible</div>
@@ -142,6 +148,7 @@
     <button class="tog on" id="tCasas">Casas</button>
     <button class="tog on" id="tEtiq">Etiquetas</button>
     <button class="tog on" id="tArb">Árboles</button>
+    <button class="tog" id="tEsq">Esquineros</button>
     <button class="tog" id="tEst">Estados</button>
     <button class="tog on" id="tRot">Giro</button>
   </div>

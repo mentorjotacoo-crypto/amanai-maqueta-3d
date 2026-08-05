@@ -7,7 +7,7 @@ function rnd(){ seed = (seed * 1664525 + 1013904223) % 4294967296; return seed /
 var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 var COL = {
-  sky:0xdfe8e0, groundFar:0xd8d1bd, proteccion:0x93b287, urbano:0xe7e1cf, band:0xefe9d6,
+  sky:0xdfe8e0, groundFar:0xccd5bc, proteccion:0x8fb083, urbano:0xe7e1cf, band:0xefe9d6,
   calz:0x6e6b63, anden:0xc9c5b6, grass:0x8fb479,
   lot:0xf4efe2, perim:0xdce3c4, comercio:0xd9a441,
   wall:0xfaf6ec, roofClay:0xb9714f, roofSage:0x8fa08b,
@@ -20,6 +20,8 @@ var renderer = new THREE.WebGLRenderer({canvas:canvas, antialias:true});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.18;
 
 var scene = new THREE.Scene();
 scene.background = new THREE.Color(COL.sky);
@@ -134,7 +136,7 @@ var lotMesh = (function(){
   world.add(m);
   return m;
 })();
-document.getElementById('stLots').textContent = String(PLAN.lots.length);
+document.getElementById('stLots').textContent = '332'; /* inventario oficial OPCION V4 */
 
 function paintLot(i, color){
   var r = lotRanges[i], arr = lotMesh.geometry.attributes.color.array;
@@ -169,10 +171,10 @@ var estados = PLAN.lots.map(function(){ var r = rnd(); return r<0.55?0:(r<0.7?1:
 var EST_NAMES = ['Disponible','Reservado','Vendido'];
 var EST_COLORS = [new THREE.Color(COL.disponible), new THREE.Color(COL.reservado), new THREE.Color(COL.vendido)];
 var estadosOn = false;
+var esqOn = false;
+var ESQ_COLORS = {T1: new THREE.Color(0xc96b57), T2: new THREE.Color(0xe5a15c)};
 function repaintAll(){
-  for (var i=0;i<PLAN.lots.length;i++){
-    paintLot(i, estadosOn ? EST_COLORS[estados[i]] : lotRanges[i].color);
-  }
+  for (var i=0;i<PLAN.lots.length;i++) paintLot(i, lotColor(i));
 }
 
 /* ---------- casas ---------- */
@@ -211,7 +213,7 @@ var houses = new THREE.Group(); world.add(houses);
   function angDiff(a, b){ return Math.abs(Math.atan2(Math.sin(a-b), Math.cos(a-b))); }
   for (var i=0;i<spots.length;i++){
     var sp = spots[i], two = rnd() < 0.3;
-    var h = two ? 5.3 : 2.9;
+    var h = two ? 4.7 : 2.9;
     /* la casa siempre a lo largo del eje del lote (como sus vecinas);
        la fachada apunta al extremo del eje mas cercano a la via */
     var ax = -sp.a;
@@ -251,19 +253,42 @@ PLAN.perims.forEach(function(pl){
   world.add(m); perimMeshes.push(m);
 });
 
+/* ---------- contorno de lotes ---------- */
+(function(){
+  var pos = [];
+  function outline(pts, y){
+    for (var i=0;i<pts.length;i++){
+      var a = pts[i], b = pts[(i+1)%pts.length];
+      pos.push(a[0], y, a[1], b[0], y, b[1]);
+    }
+  }
+  PLAN.lots.forEach(function(l){ outline(l.p, BASE+0.345); });
+  PLAN.perims.forEach(function(p){ outline(p.p, 0.78+0.36); });
+  var g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+  var lines = new THREE.LineSegments(g, new THREE.LineBasicMaterial({color:0x8f8672, transparent:true, opacity:0.5}));
+  world.add(lines);
+})();
+
 /* ---------- árboles y vegetación ---------- */
 var arbGroup = new THREE.Group(); world.add(arbGroup);
 (function(){
+  var inTerr = function(p){ return pointInPoly(PLAN.terrain.e, p[0], p[1]); };
+  var bigTrees = PLAN.trees.filter(inTerr);
+  var bushPts = [];
+  PLAN.scatter.filter(inTerr).forEach(function(p){
+    if (rnd() < 0.32) bigTrees.push(p); else bushPts.push(p);
+  });
   var trunkG = new THREE.CylinderGeometry(0.35,0.5,1.8,6);
   var leafG = new THREE.IcosahedronGeometry(2.2,0);
-  var n = PLAN.trees.length;
+  var n = bigTrees.length;
   var trunks = new THREE.InstancedMesh(trunkG, mat(COL.trunk,1), n);
   var leaves = new THREE.InstancedMesh(leafG, mat(COL.leaf1,0.95), n);
   var m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0,1,0);
   var pos = new THREE.Vector3(), sc = new THREE.Vector3();
   var cols = [COL.leaf1, COL.leaf2, COL.leaf3];
   for (var i=0;i<n;i++){
-    var t = PLAN.trees[i], s = 1.0 + rnd()*0.7;
+    var t = bigTrees[i], s = 0.8 + rnd()*0.8;
     q.setFromAxisAngle(up, rnd()*Math.PI);
     sc.set(s,s,s); pos.set(t[0], 0.6+0.9*s, t[1]);
     m4.compose(pos,q,sc); trunks.setMatrixAt(i,m4);
@@ -274,11 +299,11 @@ var arbGroup = new THREE.Group(); world.add(arbGroup);
   trunks.castShadow = leaves.castShadow = true;
   arbGroup.add(trunks); arbGroup.add(leaves);
 
-  var m = PLAN.scatter.length;
+  var m = bushPts.length;
   var bushG = new THREE.IcosahedronGeometry(1.6,0);
   var bushes = new THREE.InstancedMesh(bushG, mat(COL.leaf2,1), m);
   for (i=0;i<m;i++){
-    var p = PLAN.scatter[i], bs = 0.5 + rnd()*0.8;
+    var p = bushPts[i], bs = 0.5 + rnd()*0.8;
     q.setFromAxisAngle(up, rnd()*Math.PI);
     sc.set(bs, bs*0.55, bs); pos.set(p[0], 0.55, p[1]);
     m4.compose(pos,q,sc); bushes.setMatrixAt(i,m4);
@@ -290,26 +315,29 @@ var arbGroup = new THREE.Group(); world.add(arbGroup);
 
 /* ---------- etiquetas ---------- */
 var lblGroup = new THREE.Group(); world.add(lblGroup);
-function makeLabel(text, x, z, y, scale, alpha){
-  var cv = document.createElement('canvas'); cv.width = 320; cv.height = 96;
+function makeLabel(text, x, z, y, hScreen, alpha){
+  var probe = document.createElement('canvas').getContext('2d');
+  probe.font = '600 44px "Palatino Linotype", Georgia, serif';
+  var tw = Math.ceil(probe.measureText(text).width);
+  var W = tw + 48, H = 96;
+  var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   var ctx = cv.getContext('2d');
   ctx.font = '600 44px "Palatino Linotype", Georgia, serif';
   ctx.textAlign='center'; ctx.textBaseline='middle';
-  var tw = Math.min(ctx.measureText(text).width + 34, 316);
   ctx.fillStyle = 'rgba(28,44,35,'+(alpha||0.55)+')';
-  ctx.beginPath(); ctx.roundRect((320-tw)/2, 16, tw, 64, 12); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(4, 16, W-8, 64, 12); ctx.fill();
   ctx.fillStyle = '#f3f1e7';
-  ctx.fillText(text, 160, 50);
+  ctx.fillText(text, W/2, 50);
   var tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
-  var sp = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, transparent:true, depthTest:false}));
-  sp.scale.set(scale, scale*0.3, 1);
+  var sp = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, transparent:true, depthTest:false, sizeAttenuation:false}));
+  sp.scale.set(hScreen*W/H, hScreen, 1);
   sp.position.set(x, y, z);
   sp.renderOrder = 5;
   lblGroup.add(sp);
 }
-PLAN.mzLabels.forEach(function(L){ makeLabel(L.t, L.c[0], L.c[1], 13, 30, 0.6); });
-PLAN.loteLabels.forEach(function(L){ makeLabel(L.t, L.c[0], L.c[1], 8, 20, 0.45); });
-PLAN.extraLabels.forEach(function(L){ makeLabel(L.t, L.c[0], L.c[1], 11, 34, 0.4); });
+PLAN.mzLabels.forEach(function(L){ makeLabel(L.t, L.c[0], L.c[1], 13, 0.034, 0.6); });
+PLAN.loteLabels.forEach(function(L){ makeLabel(L.t, L.c[0], L.c[1], 8, 0.024, 0.45); });
+PLAN.extraLabels.forEach(function(L){ makeLabel(L.t, L.c[0], L.c[1], 11, 0.028, 0.35); });
 
 /* ---------- cámara / controles ---------- */
 var TARGET0 = new THREE.Vector3(0, 2, -10);
@@ -391,10 +419,18 @@ function pickLot(e){
   }
   return null;
 }
-function lotColor(i){ return estadosOn ? EST_COLORS[estados[i]] : lotRanges[i].color; }
+function lotColor(i){
+  if (esqOn){
+    var e = PLAN.lots[i].e;
+    return e ? ESQ_COLORS[e] : lotRanges[i].color;
+  }
+  return estadosOn ? EST_COLORS[estados[i]] : lotRanges[i].color;
+}
+function esqName(lot){ return lot.e === 'T1' ? 'Esquinero Tipo 1' : (lot.e === 'T2' ? 'Esquinero Tipo 2' : null); }
 function lotNum(lot){ return lot.n === 'SN' ? 'S/N' : lot.n; }
 function fmtLot(lot, i){
   var est = estadosOn ? '<br><span>Estado: '+EST_NAMES[estados[i]]+' (demo)</span>' : '';
+  if (esqName(lot)) est = '<br><span>'+esqName(lot)+'</span>' + est;
   return '<b>'+lot.mz+' &middot; Lote '+lotNum(lot)+'</b><span>'+
     (lot.w>=5.4 && lot.d>=9.8 ? '5,50 &times; 10,00 m &mdash; 55 m&sup2;' : lot.w.toFixed(1).replace('.',',')+' &times; '+lot.d.toFixed(1).replace('.',',')+' m &mdash; '+lot.area+' m&sup2;')+
     '</span>'+est;
@@ -428,7 +464,8 @@ function select(e){
     selected = hit.i;
     paintLot(hit.i, selColor);
     var lot = PLAN.lots[hit.i];
-    html = '<b>'+lot.mz+' &middot; Lote '+lotNum(lot)+'</b><div class="d">Frente &times; fondo: '+lot.w.toFixed(1).replace('.',',')+' &times; '+lot.d.toFixed(1).replace('.',',')+' m<br>&Aacute;rea: '+lot.area+' m&sup2;<br><em>Numeraci&oacute;n seg&uacute;n plano V.27</em></div>';
+    var esq = esqName(lot) ? '<br><b style="font-size:12px;color:#a05a3c">'+esqName(lot)+'</b>' : '';
+    html = '<b>'+lot.mz+' &middot; Lote '+lotNum(lot)+'</b><div class="d">Frente &times; fondo: '+lot.w.toFixed(1).replace('.',',')+' &times; '+lot.d.toFixed(1).replace('.',',')+' m<br>&Aacute;rea: '+lot.area+' m&sup2;'+esq+'<br><em>Numeraci&oacute;n seg&uacute;n plano</em></div>';
     if (estadosOn){
       var ec = ['#b5d69c','#e9c46a','#c96f57'][estados[hit.i]];
       html += '<span class="est" style="background:'+ec+'33;color:#22352b;border:1px solid '+ec+'">'+EST_NAMES[estados[hit.i]]+' (demo)</span>';
@@ -461,7 +498,23 @@ bindTog('tEtiq', function(on){ lblGroup.visible = on; }, true);
 bindTog('tArb', function(on){ arbGroup.visible = on; }, true);
 bindTog('tEst', function(on){
   estadosOn = on;
+  if (on && esqOn){
+    esqOn = false;
+    document.getElementById('tEsq').classList.remove('on');
+    document.getElementById('lgEsq').style.display = 'none';
+  }
   document.getElementById('lgEst').style.display = on ? 'block' : 'none';
+  repaintAll();
+  if (selected >= 0) paintLot(selected, selColor);
+}, false);
+bindTog('tEsq', function(on){
+  esqOn = on;
+  if (on && estadosOn){
+    estadosOn = false;
+    document.getElementById('tEst').classList.remove('on');
+    document.getElementById('lgEst').style.display = 'none';
+  }
+  document.getElementById('lgEsq').style.display = on ? 'block' : 'none';
   repaintAll();
   if (selected >= 0) paintLot(selected, selColor);
 }, false);
