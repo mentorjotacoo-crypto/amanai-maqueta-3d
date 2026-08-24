@@ -321,6 +321,15 @@ for lot in lots_out:
         if k in _ECORR: lot["e"] = _ECORR[k]
         elif "e" in lot: del lot["e"]
 print("PLR aplicado:", sum(1 for l in lots_out if l["n"] != "SN"), "numerados /", len(lots_out))
+# metrajes OFICIALES (hoja "AREAS FINAL AGO. 2026" del archivo (3))
+_ago = json.load(open("file_ago.json"))
+_hits = 0
+for lot in lots_out:
+    if lot["n"] == "SN": continue
+    k = lot["mz"].replace("MZ ","") + "|" + str(lot["n"])
+    if k in _ago and _ago[k][0] is not None:
+        lot["area"] = _ago[k][0]; _hits += 1
+print("areas oficiales aplicadas:", _hits)
 
 # validacion de unicidad
 from collections import Counter as _C
@@ -390,6 +399,10 @@ _LETMAP = {"A":"A","B":"B","C":"C","D":"D","E":"E","F":"F","G":"G","H":"H","I":"
 for p in perims_out:
     p["old_letter"]=p["letter"]; p["letter"]=_LETMAP.get(p["letter"])
 print("perim letras PLR:", [(p["old_letter"], p["letter"]) for p in perims_out])
+_agoL = json.load(open("file_ago_letters.json"))
+for p in perims_out:
+    if p["letter"] and p["letter"] in _agoL:
+        p["area"] = _agoL[p["letter"]]
 perims_out[:] = [p for p in perims_out if p["letter"]]
 data["perims"] = perims_out
 data["loteLabels"] = [{"t": "Lote " + p["letter"], "c": p["c"]} for p in perims_out]
