@@ -449,7 +449,7 @@ function fmtLot(lot, i){
   var est = estadosOn ? '<br><span>Estado: '+EST_NAMES[estados[i]]+' (demo)</span>' : '';
   if (esqName(lot)) est = '<br><span>'+esqName(lot)+'</span>' + est;
   return '<b>'+lot.mz+' &middot; Lote '+lotNum(lot)+'</b><span>'+
-    (lot.w>=5.4 && lot.d>=9.8 ? '5,50 &times; 10,00 m &mdash; 55 m&sup2;' : lot.w.toFixed(1).replace('.',',')+' &times; '+lot.d.toFixed(1).replace('.',',')+' m &mdash; '+lot.area+' m&sup2;')+
+    (lot.irr ? 'Lote irregular &mdash; &aacute;rea por confirmar' : (lot.w>=5.4 && lot.d>=9.8 && Math.abs(lot.area-55)<0.01 ? '5,50 &times; 10,00 m &mdash; 55 m&sup2;' : lot.w.toFixed(1).replace('.',',')+' &times; '+lot.d.toFixed(1).replace('.',',')+' m &mdash; '+lot.area+' m&sup2;'))+
     '</span>'+est;
 }
 function hover(e){
@@ -464,7 +464,7 @@ function hover(e){
   } else if (hit.type === 'perim'){
     html = '<b>Lote '+hit.pl.letter+'</b><span>'+String(hit.pl.area).replace('.',',')+' m&sup2; seg&uacute;n plano'+(hit.pl.approx?' &middot; posici&oacute;n aproximada':'')+'</span>';
   } else {
-    html = '<b>Zona de comercio</b><span>2.501,37 m&sup2; seg&uacute;n plano</span>';
+    html = '<b>Zona de comercio</b><span>2.631,09 m&sup2; seg&uacute;n plano</span>';
   }
   tip.innerHTML = html;
   tip.style.display = 'block';
@@ -482,7 +482,7 @@ function select(e){
     paintLot(hit.i, selColor);
     var lot = PLAN.lots[hit.i];
     var esq = esqName(lot) ? '<br><b style="font-size:12px;color:#a05a3c">'+esqName(lot)+'</b>' : '';
-    html = '<b>'+lot.mz+' &middot; Lote '+lotNum(lot)+'</b><div class="d">Frente &times; fondo: '+lot.w.toFixed(1).replace('.',',')+' &times; '+lot.d.toFixed(1).replace('.',',')+' m<br>&Aacute;rea: '+lot.area+' m&sup2;'+esq+'<br><em>Numeraci&oacute;n seg&uacute;n plano</em></div>';
+    html = '<b>'+lot.mz+' &middot; Lote '+lotNum(lot)+'</b><div class="d">Frente &times; fondo: '+lot.w.toFixed(1).replace('.',',')+' &times; '+lot.d.toFixed(1).replace('.',',')+' m<br>'+(lot.irr ? 'Lote irregular &mdash; &aacute;rea por confirmar en replanteo' : '&Aacute;rea: '+lot.area+' m&sup2;')+esq+'<br><em>Numeraci&oacute;n seg&uacute;n plano</em></div>';
     if (estadosOn){
       var ec = ['#b5d69c','#e9c46a','#c96f57'][estados[hit.i]];
       html += '<span class="est" style="background:'+ec+'33;color:#22352b;border:1px solid '+ec+'">'+EST_NAMES[estados[hit.i]]+' (demo)</span>';
@@ -490,7 +490,7 @@ function select(e){
   } else if (hit.type === 'perim'){
     html = '<b>Lote '+hit.pl.letter+'</b><div class="d">Lote perimetral<br>&Aacute;rea seg&uacute;n plano: '+String(hit.pl.area).replace('.',',')+' m&sup2;'+(hit.pl.approx?'<br><em>Posici&oacute;n aproximada</em>':'')+'</div>';
   } else {
-    html = '<b>Zona de comercio</b><div class="d">&Aacute;rea seg&uacute;n plano: 2.501,37 m&sup2;</div>';
+    html = '<b>Zona de comercio</b><div class="d">&Aacute;rea seg&uacute;n plano: 2.631,09 m&sup2;</div>';
   }
   cardBody.innerHTML = html;
   card.style.display = 'block';

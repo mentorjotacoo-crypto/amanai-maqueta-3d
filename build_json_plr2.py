@@ -183,6 +183,9 @@ for i, (nm, v) in sorted(cell_of.items(), key=lambda z: (int(z[1][0].split()[1])
            'area': ago.get(k, [round(c.area * S * S)])[0]}
     e = EMAP.get((nm, v))
     if e: rec['e'] = e
+    _rect = (c.area * S * S) / (rec['w'] * rec['d']) if rec['w'] * rec['d'] > 0 else 1
+    if abs(rec['area'] - 55) < 0.01 and (_rect < 0.93 or rec['w'] < 5.0 or rec['w'] > 6.2 or rec['d'] < 9.2 or rec['d'] > 10.8):
+        rec['irr'] = 1
     lots.append(rec)
 data['lots'] = lots
 pers = []
