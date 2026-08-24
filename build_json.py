@@ -338,6 +338,14 @@ dups = [k for k, v in chk.items() if v > 1]
 print("duplicados:", dups)
 print("S/N:", sum(1 for l in lots_out if l["n"] == "SN"))
 print("conteo final por mz:", dict(sorted(_C(l["mz"] for l in lots_out).items())))
+# PLR: los poligonos S/N no existen en el loteo oficial (varios tapan vias del replanteo) -> fuera
+_antes = len(lots_out)
+lots_out = [l for l in lots_out if l["n"] != "SN"]
+print("S/N eliminados de la maqueta:", _antes - len(lots_out))
+# tramo de via del replanteo: la via del norte continua hasta empalmar con la via MZ6/MZ7
+data["calz"].append({"e": [[66.0,-51.6],[81.0,-49.0],[100.6,-46.5],[100.5,-35.5],
+                            [93.8,-35.5],[89.7,-36.8],[79.7,-38.0],[80.3,-42.3],
+                            [70.2,-42.5],[66.0,-42.6]]})
 data["lots"] = lots_out
 print("lots:", len(lots_out))
 print("per mz:", {k: len(v) for k, v in sorted(by_mz.items())})
