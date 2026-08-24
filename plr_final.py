@@ -31,6 +31,8 @@ P=np.array([(x,y) for v,x,y in lot_nums]); VN=[v for v,_,_ in lot_nums]
 d=json.loads(open('plan_data_pre_plr.js').read()[len('var PLAN='):-1])
 OLDNEW={1:1,2:2,3:3,4:4,5:5,6:6,7:6,8:6,9:6,10:6,21:6,11:7,12:8,13:9,14:10,15:11,16:12,17:13,18:14,19:15,20:16}
 newmz=[f"MZ {OLDNEW[int(l['mz'].replace('MZ ',''))]}" for l in d['lots']]
+# lotes oficiales unicamente (excluir S/N: fantasmas y astillas que causan aliasing en el ICP)
+oficial=[l['n']!='SN' for l in d['lots']]
 C=np.array([l['c'] for l in d['lots']])
 def pip(pts,x,z):
     inside=False
@@ -78,7 +80,7 @@ print('grupos:', {k:len(v) for k,v in sorted(groups.items(),key=lambda z:int(z[0
 S0=0.4885
 fits={}; out={}
 for nm,members in groups.items():
-    idxs=[i for i in range(len(C)) if newmz[i]==nm]
+    idxs=[i for i in range(len(C)) if newmz[i]==nm and oficial[i]]
     if not idxs or not members: continue
     Pm=P[members]; Cm=C[idxs]; tcm=cKDTree(Cm)
     s=S0; R=np.eye(2); b=Cm.mean(0)-s*Pm.mean(0)

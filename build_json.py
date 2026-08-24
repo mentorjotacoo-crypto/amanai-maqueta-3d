@@ -309,6 +309,17 @@ for _i, lot in enumerate(lots_out):
     else:
         lot["mz"] = f"MZ {_OLDNEW[_old]}"
         lot["n"] = "SN"
+# esquineros: limpiar en lotes sin numero PLR (eliminados del loteo) y re-derivar
+# en las manzanas re-registradas segun la regla del usuario sobre numeracion PLR
+for lot in lots_out:
+    if lot["n"] == "SN" and "e" in lot: del lot["e"]
+_ECORR = {("MZ 5",1):"T1", ("MZ 5",2):"T2", ("MZ 5",4):"T2",
+          ("MZ 16",1):"T1", ("MZ 16",7):"T1", ("MZ 16",2):"T2", ("MZ 16",6):"T2"}
+for lot in lots_out:
+    if lot["mz"] in ("MZ 5","MZ 16") and lot["n"] != "SN":
+        k = (lot["mz"], lot["n"])
+        if k in _ECORR: lot["e"] = _ECORR[k]
+        elif "e" in lot: del lot["e"]
 print("PLR aplicado:", sum(1 for l in lots_out if l["n"] != "SN"), "numerados /", len(lots_out))
 
 # validacion de unicidad
