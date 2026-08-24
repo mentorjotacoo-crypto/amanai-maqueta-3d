@@ -136,7 +136,7 @@ var lotMesh = (function(){
   world.add(m);
   return m;
 })();
-document.getElementById('stLots').textContent = '332'; /* inventario oficial OPCION V4 */
+document.getElementById('stLots').textContent = '327'; /* conteo oficial plano PLR */
 
 function paintLot(i, color){
   var r = lotRanges[i], arr = lotMesh.geometry.attributes.color.array;
@@ -206,8 +206,9 @@ var houses = new THREE.Group(); world.add(houses);
     PLAN.lots.forEach(function(l){
       if (l.n === 'SN') return;
       var a2 = -2*l.a;
-      (acc[l.mz] = acc[l.mz] || [0,0]);
-      acc[l.mz][0] += Math.cos(a2); acc[l.mz][1] += Math.sin(a2);
+      var gk = l.g || l.mz;
+      (acc[gk] = acc[gk] || [0,0]);
+      acc[gk][0] += Math.cos(a2); acc[gk][1] += Math.sin(a2);
     });
     for (var k in acc) mzAxis[k] = Math.atan2(acc[k][1], acc[k][0]) / 2;
   })();
@@ -231,7 +232,8 @@ var houses = new THREE.Group(); world.add(houses);
     /* la casa siempre a lo largo del eje del lote (como sus vecinas);
        la fachada apunta al extremo del eje mas cercano a la via */
     var ax = -sp.a;
-    if (SNAP_MZ[sp.mz] && mzAxis[sp.mz] !== undefined && axDiff(ax, mzAxis[sp.mz]) > 0.28) ax = mzAxis[sp.mz];
+    var gk2 = sp.g || sp.mz;
+    if (SNAP_MZ[gk2] && mzAxis[gk2] !== undefined && axDiff(ax, mzAxis[gk2]) > 0.28) ax = mzAxis[gk2];
     var facing = angDiff(ax, sp.f) <= angDiff(ax + Math.PI, sp.f) ? ax : ax + Math.PI;
     var rotY = -facing;
     var fx = Math.cos(facing), fz = Math.sin(facing);

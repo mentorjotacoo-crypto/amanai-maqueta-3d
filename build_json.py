@@ -296,6 +296,21 @@ for lot in lots_out:
     t1c, t2c = CORNERS.get(int(lot["mz"].replace("MZ ","")), (set(), set()))
     if lot["n"] in t1c: lot["e"] = "T1"
     elif lot["n"] in t2c: lot["e"] = "T2"
+# ================= REMAP a numeracion oficial PLR (16 manzanas) =================
+_plr = json.load(open("plr_map.json"))
+_OLDNEW = {1:1,2:2,3:3,4:4,5:5,6:6,7:6,8:6,9:6,10:6,21:6,11:7,12:8,13:9,14:10,15:11,16:12,17:13,18:14,19:15,20:16}
+for _i, lot in enumerate(lots_out):
+    _old = int(lot["mz"].replace("MZ ",""))
+    if _old in (1,2,3,4,5,21):
+        lot["g"] = lot["mz"]          # grupo de alineacion de casas (banda norte)
+    _k = str(_i)
+    if _k in _plr:
+        lot["mz"], lot["n"] = _plr[_k][0], _plr[_k][1]
+    else:
+        lot["mz"] = f"MZ {_OLDNEW[_old]}"
+        lot["n"] = "SN"
+print("PLR aplicado:", sum(1 for l in lots_out if l["n"] != "SN"), "numerados /", len(lots_out))
+
 # validacion de unicidad
 from collections import Counter as _C
 chk = _C((l["mz"], l["n"]) for l in lots_out if l["n"] != "SN")
@@ -354,10 +369,21 @@ data["perims"] = perims_out
 
 data["trees"] = [M(t) for t in L["trees"]]
 data["scatter"] = [M(t) for t in L["scatter"]]
-data["mzLabels"] = [{"t": k, "c": M(v)} for k, v in MZ_LABELS.items()]
+# rotulos PLR (16 manzanas) + letras perimetrales nuevas A-Q
+_plrlab = json.load(open("plr_labels.json"))
+data["mzLabels"] = _plrlab["mz"]
+# reasignar letra de cada perim al rotulo PLR mas cercano (area se conserva por geometria)
+# tabla vieja->PLR validada visualmente (PLR elimina el viejo Q de 285 m2 y renombra R->Q)
+_LETMAP = {"A":"A","B":"B","C":"C","D":"D","E":"E","F":"F","G":"G","H":"H","I":"I",
+           "J":"J","K":"K","L":"L","M":"M","N":"N","O":"O","P":"P","R":"Q","Q":None}
+for p in perims_out:
+    p["old_letter"]=p["letter"]; p["letter"]=_LETMAP.get(p["letter"])
+print("perim letras PLR:", [(p["old_letter"], p["letter"]) for p in perims_out])
+perims_out[:] = [p for p in perims_out if p["letter"]]
+data["perims"] = perims_out
 data["loteLabels"] = [{"t": "Lote " + p["letter"], "c": p["c"]} for p in perims_out]
 data["extraLabels"] = [
-  {"t":"Comercio", "c": M((235,234))},
+  {"t":"Mall Comercial", "c": _plrlab["mall"] or M((235,234))},
   {"t":"Protección Ambiental 5", "c": M((455,70))},
   {"t":"Protección Ambiental 4", "c": M((150,195))},
   {"t":"Protección Ambiental 6", "c": M((460,535))}]
