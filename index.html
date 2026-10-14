@@ -397,20 +397,37 @@ var houses = new THREE.Group(); world.add(houses);
   var SNAP_MZ = {'MZ 1':1,'MZ 2':1,'MZ 3':1,'MZ 4':1,'MZ 5':1,'MZ 21':1};
   function axDiff(a,b){ var d = Math.abs((a-b) % Math.PI); return Math.min(d, Math.PI-d); }
   var HL = 6.4, HW = 4.1; /* fondo (X, hacia la vía) x frente (Z) */
-  var bodyG = new THREE.BoxGeometry(HL, 1, HW);
-  var body = new THREE.InstancedMesh(bodyG, mat(COL.wall, 0.85), spots.length);
-  var roofG = prismGeo(4.5, 1.6, 6.9);
-  var roof = new THREE.InstancedMesh(roofG, mat(COL.roofClay, 0.8), spots.length);
-  var doorG = new THREE.BoxGeometry(0.1, 2.05, 0.95);
-  var door = new THREE.InstancedMesh(doorG, mat(0x6b4a32, 0.8), spots.length);
-  var winG = new THREE.BoxGeometry(0.1, 1.05, 1.5);
-  var win = new THREE.InstancedMesh(winG, new THREE.MeshStandardMaterial({color:0x9fb9c4, roughness:0.35, metalness:0.15}), spots.length);
-  var q = new THREE.Quaternion(), up = new THREE.Vector3(0,1,0);
-  var pos = new THREE.Vector3(), sc = new THREE.Vector3(), m4 = new THREE.Matrix4();
+  /* Casas modelo Reservas de Amanai: losa plana, volumen blanco en planta baja,
+     segundo piso en piedra con ventanal de vidrio, puerta de garaje oscura,
+     panel de madera y jardinera en la terraza. Tres tipologías: 1, 2 y 3 pisos. */
+  var M_WALL  = mat(0xf3efe6, 0.85);
+  var M_STONE = mat(0xbfb6a6, 0.9);
+  var M_DARK  = mat(0x262c33, 0.6);
+  var M_WOOD  = mat(0x9a7049, 0.8);
+  var M_PLANT = mat(0x4f7a55, 0.9);
+  var M_GLASS = new THREE.MeshStandardMaterial({color:0x8fa7b3, roughness:0.2, metalness:0.2});
+  var G = {
+    ground: new THREE.BoxGeometry(HL, 1, HW),
+    upper:  new THREE.BoxGeometry(HL*0.92, 1, HW*0.98),
+    third:  new THREE.BoxGeometry(HL*0.6, 1, HW*0.9),
+    slab:   new THREE.BoxGeometry(HL*1.04, 0.22, HW*1.06),
+    garage: new THREE.BoxGeometry(0.08, 2.3, 2.3),
+    glass:  new THREE.BoxGeometry(0.08, 1, HW*0.8),
+    wood:   new THREE.BoxGeometry(0.08, 1.6, 1.4),
+    plant:  new THREE.BoxGeometry(HL*0.5, 0.5, 1.4)
+  };
+  function box(geo, mt, x, y, z, sy){
+    var m = new THREE.Mesh(geo, mt);
+    m.position.set(x, y, z);
+    if (sy !== undefined) m.scale.set(1, sy, 1);
+    m.castShadow = true; m.receiveShadow = true;
+    return m;
+  }
   function angDiff(a, b){ return Math.abs(Math.atan2(Math.sin(a-b), Math.cos(a-b))); }
   for (var i=0;i<spots.length;i++){
-    var sp = spots[i], two = rnd() < 0.3;
-    var h = two ? 4.7 : 2.9;
+    var sp = spots[i];
+    var r = rnd();
+    var tip = r < 0.45 ? 1 : (r < 0.85 ? 2 : 3);
     /* la casa siempre a lo largo del eje del lote (como sus vecinas);
        la fachada apunta al extremo del eje mas cercano a la via */
     var ax = -sp.a;
@@ -421,23 +438,38 @@ var houses = new THREE.Group(); world.add(houses);
     var fx = Math.cos(facing), fz = Math.sin(facing);
     var setback = sp.d/2 - 1.3 - HL/2;      /* antejardin de ~1,3 m */
     var cx0 = sp.c[0] + fx*setback, cz0 = sp.c[1] + fz*setback;
-    q.setFromAxisAngle(up, rotY);
-    sc.set(1, h, 1); pos.set(cx0, BASE+0.34+h/2, cz0);
-    m4.compose(pos, q, sc); body.setMatrixAt(i, m4);
-    sc.set(1,1,1); pos.set(cx0, BASE+0.34+h, cz0);
-    m4.compose(pos, q, sc); roof.setMatrixAt(i, m4);
-    /* puerta y ventana sobre la fachada (+X local, desplazadas en Z local) */
-    var lx = HL/2 + 0.02;
-    pos.set(cx0 + fx*lx - fz*(-1.05), BASE+0.34+1.03, cz0 + fz*lx + fx*(-1.05));
-    m4.compose(pos, q, sc); door.setMatrixAt(i, m4);
-    pos.set(cx0 + fx*lx - fz*(1.05), BASE+0.34+1.65, cz0 + fz*lx + fx*(1.05));
-    m4.compose(pos, q, sc); win.setMatrixAt(i, m4);
-    roof.setColorAt(i, tmpC.set(rnd()<0.72 ? COL.roofClay : COL.roofSage).offsetHSL(0,0,(rnd()-0.5)*0.05));
-    body.setColorAt(i, tmpC.set(COL.wall).offsetHSL(0,0,(rnd()-0.5)*0.03));
+    var g = new THREE.Group();
+    g.position.set(cx0, 0, cz0);
+    g.rotation.y = rotY;
+    var y0 = BASE + 0.34;
+    var hG = tip === 1 ? 3.0 : 3.0;            /* alto de planta baja */
+    var hU = tip === 1 ? 0 : 2.7;              /* segundo piso */
+    var hT = tip === 3 ? 2.6 : 0;              /* tercer nivel */
+    /* planta baja (blanca), a toda la huella */
+    g.add(box(G.ground, M_WALL, 0, y0 + hG/2, 0, hG));
+    var top = y0 + hG;
+    if (tip >= 2){
+      /* segundo piso en piedra, algo retirado del frente */
+      g.add(box(G.upper, M_STONE, -HL*0.04, top + hU/2, 0, hU));
+      /* ventanal de vidrio a todo lo ancho del frente */
+      g.add(box(G.glass, M_GLASS, HL*0.46 + 0.04, top + hU*0.55, 0, hU*0.7));
+      /* panel de madera sobre el ventanal */
+      g.add(box(G.wood, M_WOOD, HL*0.46 + 0.04, top + hU*0.92, -0.7));
+      top += hU;
+    }
+    if (tip === 3){
+      /* tercer nivel retirado hacia atrás, con terraza */
+      g.add(box(G.third, M_WALL, -HL*0.2, top + hT/2, 0, hT));
+      g.add(box(G.glass, M_GLASS, -HL*0.2 + HL*0.3 + 0.04, top + hT*0.55, 0, hT*0.6));
+      top += hT;
+    }
+    /* losa plana oscura y jardinera en la terraza */
+    g.add(box(G.slab, M_DARK, 0, top + 0.11, 0));
+    g.add(box(G.plant, M_PLANT, -HL*0.12, top + 0.22 + 0.25, 0));
+    /* puerta de garaje oscura sobre la fachada (planta baja) */
+    g.add(box(G.garage, M_DARK, HL/2 + 0.04, y0 + 1.15, -0.85));
+    houses.add(g);
   }
-  body.castShadow = body.receiveShadow = true;
-  roof.castShadow = true;
-  houses.add(body); houses.add(roof); houses.add(door); houses.add(win);
 })();
 
 /* ---------- lotes perimetrales ---------- */
